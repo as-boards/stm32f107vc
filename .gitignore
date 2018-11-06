@@ -1,0 +1,7 @@
+*.o
+*.s
+*.a
+*.icf
+*template*
+EWARM
+DSP_Lib
