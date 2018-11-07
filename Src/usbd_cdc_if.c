@@ -51,7 +51,11 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include <stdio.h>
+#include "ringbuffer.h"
+#ifdef USE_SHELL
+#include "shell.h"
+#endif
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,7 +64,9 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+#ifdef USE_USB_SERIAL
+RB_DECLARE(usbio, char, 1024);
+#endif
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -251,7 +257,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
     case CDC_SET_LINE_CODING:
-
+    	printf("VCOM set baudrate is %d\n", ((uint32_t*)pbuf)[0]);
     break;
 
     case CDC_GET_LINE_CODING:
@@ -291,6 +297,15 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
+#ifdef USE_SHELL
+  uint32_t i;
+  for(i=0; i<*Len; i++) {
+    if('\r' == Buf[i]) {
+      Buf[i] = '\n';
+    }
+    SHELL_input(Buf[i]);
+  }
+#endif
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
@@ -323,7 +338,26 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+void CDC_MainFunction(void)
+{
+	uint8_t usbTxBuffer[32];
+	rb_size_t r;
+	USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
 
+	if(0 == hcdc->TxState) {
+		r = RB_Pop(&rb_usbio, usbTxBuffer, sizeof(usbTxBuffer));
+		if(r > 0) {
+			CDC_Transmit_FS(usbTxBuffer, r);
+		}
+	}
+}
+
+#ifdef USE_SHELL
+void USB_SerialPutChar(char ch)
+{
+	RB_Push(&rb_usbio, &ch, 1);
+}
+#endif
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**
