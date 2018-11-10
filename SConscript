@@ -7,7 +7,7 @@ MODULES = asenv['MODULES']
 
 objs = []
 
-if('USB_SERIAL' in MODULES):
+if(('USB_SERIAL' in MODULES) or ('USB_CAN' in MODULES)):
     srcs = Glob('Src/usb*.c')
     srcs += Glob('Src/stm32f1xx_it.c')
     srcs += Glob('Drivers/STM32F1xx_HAL_Driver/Src/*.c')

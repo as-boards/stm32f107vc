@@ -53,9 +53,14 @@
 /* USER CODE BEGIN INCLUDE */
 #include <stdio.h>
 #include "ringbuffer.h"
-#ifdef USE_SHELL
+#ifdef USE_USB_SERIAL
 #include "shell.h"
 #endif
+#ifdef USE_USB_CAN
+#include "Can.h"
+#include "CanIf_Cbk.h"
+#endif
+#include "asdebug.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,9 +68,14 @@
 /* Private macro -------------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+#define AS_LOG_USB 1
 /* Private variables ---------------------------------------------------------*/
 #ifdef USE_USB_SERIAL
 RB_DECLARE(usbio, char, 1024);
+#endif
+#ifdef USE_USB_CAN
+RB_EXTERN(canin);
+RB_EXTERN(canout);
 #endif
 /* USER CODE END PV */
 
@@ -257,7 +267,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
     case CDC_SET_LINE_CODING:
-    	printf("VCOM set baudrate is %d\n", ((uint32_t*)pbuf)[0]);
+        ASLOG(USB,"VCOM set baudrate is %d\n", ((uint32_t*)pbuf)[0]);
     break;
 
     case CDC_GET_LINE_CODING:
@@ -297,13 +307,24 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-#ifdef USE_SHELL
+#ifdef USE_USB_SERIAL
   uint32_t i;
   for(i=0; i<*Len; i++) {
     if('\r' == Buf[i]) {
       Buf[i] = '\n';
     }
     SHELL_input(Buf[i]);
+  }
+#endif
+#ifdef USE_USB_CAN
+  rb_size_t r;
+  imask_t imask;
+  Irq_Save(imask);
+  r = RB_PUSH(canin, Buf, *Len);
+  Irq_Restore(imask);
+  if(0 == r)
+  {
+    ASLOG(USB,"canin is full\n");
   }
 #endif
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
@@ -340,22 +361,53 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
 void CDC_MainFunction(void)
 {
+	imask_t imask;
+#ifdef USE_USB_SERIAL
 	uint8_t usbTxBuffer[32];
 	rb_size_t r;
 	USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
 
 	if(0 == hcdc->TxState) {
+		Irq_Save(imask);
 		r = RB_Pop(&rb_usbio, usbTxBuffer, sizeof(usbTxBuffer));
+		Irq_Restore(imask);
 		if(r > 0) {
 			CDC_Transmit_FS(usbTxBuffer, r);
 		}
 	}
+#endif
+
+#ifdef USE_USB_CAN
+	Can_SerialOutPduType pdu;
+	rb_size_t r;
+	uint8_t rv;
+	USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
+
+	if(0 == hcdc->TxState) {
+		Irq_Save(imask);
+		r = RB_POLL(canout, &pdu, sizeof(pdu));
+		Irq_Restore(imask);
+		if(r > 0) {
+			rv = CDC_Transmit_FS((uint8_t*)&pdu, r-sizeof(PduIdType));
+			if(USBD_OK == rv)
+			{
+				Irq_Save(imask);
+				RB_POP(canout, &pdu, sizeof(pdu));
+				Irq_Restore(imask);
+				CanIf_TxConfirmation(pdu.swPduHandle);
+			}
+		}
+	}
+#endif
 }
 
-#ifdef USE_SHELL
+#ifdef USE_USB_SERIAL
 void USB_SerialPutChar(char ch)
 {
+	imask_t imask;
+	Irq_Save(imask);
 	RB_Push(&rb_usbio, &ch, 1);
+	Irq_Restore(imask);
 }
 #endif
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
