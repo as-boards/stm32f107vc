@@ -77,6 +77,7 @@ RB_DECLARE(usbio, char, 1024);
 RB_EXTERN(canin);
 RB_EXTERN(canout);
 #endif
+static uint8_t bOnline = FALSE;
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -213,6 +214,8 @@ static int8_t CDC_Init_FS(void)
 static int8_t CDC_DeInit_FS(void)
 {
   /* USER CODE BEGIN 4 */
+  ASLOG(USB,"offline\n");
+  bOnline = FALSE;
   return (USBD_OK);
   /* USER CODE END 4 */
 }
@@ -267,7 +270,11 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
     case CDC_SET_LINE_CODING:
-        ASLOG(USB,"VCOM set baudrate is %d\n", ((uint32_t*)pbuf)[0]);
+        if(((uint32_t*)pbuf)[0] > 0)
+        {
+            bOnline = TRUE;
+            ASLOG(USB,"online\n");
+        }
     break;
 
     case CDC_GET_LINE_CODING:
@@ -362,6 +369,7 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 void CDC_MainFunction(void)
 {
 	imask_t imask;
+  if(bOnline) {
 #ifdef USE_USB_SERIAL
 	uint8_t usbTxBuffer[32];
 	rb_size_t r;
@@ -399,6 +407,7 @@ void CDC_MainFunction(void)
 		}
 	}
 #endif
+  }
 }
 
 #ifdef USE_USB_SERIAL
