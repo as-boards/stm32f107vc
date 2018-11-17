@@ -332,6 +332,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   rb_size_t r;
   imask_t imask;
   Can_SerialInPduType* pdu = (Can_SerialInPduType*)Buf;
+#ifndef __AS_BOOTLOADER__
   if(1 == pdu->busid)
   {
 	Irq_Save(imask);
@@ -343,6 +344,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	}
   }
   else
+#endif
   {
     Irq_Save(imask);
     r = RB_PUSH(canin, Buf, *Len);
@@ -421,10 +423,14 @@ void CDC_MainFunction(void)
 				Irq_Save(imask);
 				RB_DROP(canout, sizeof(pdu));
 				Irq_Restore(imask);
-				CanIf_TxConfirmation(pdu.swPduHandle);
+				if(-1 != pdu.swPduHandle)
+				{
+					CanIf_TxConfirmation(pdu.swPduHandle);
+				}
 			}
 		}
 	}
+#ifndef __AS_BOOTLOADER__
   {
 	Can_SerialInPduType pdu;
 	Irq_Save(imask);
@@ -441,6 +447,7 @@ void CDC_MainFunction(void)
 	}
   }
 #endif
+#endif
   }
 }
 
@@ -453,6 +460,63 @@ void USB_SerialPutChar(char ch)
 	Irq_Restore(imask);
 }
 #endif
+
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
+{
+	printf("CAN1 error: 0x%X\n", hcan->ErrorCode);
+
+}
+
+void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
+{
+	CanRxMsgTypeDef *pRxMsg = NULL;
+	Can_SerialOutPduType pdu;
+	imask_t imask;
+	rb_size_t r;
+
+	if(hcan->pRxMsg->DLC != 0xFF)
+	{
+		pRxMsg = hcan->pRxMsg;
+	}
+	else if(hcan->pRxMsg->DLC != 0xFF)
+	{
+		pRxMsg = hcan->pRx1Msg;
+	}
+	else
+	{
+		/*do nothing */
+	}
+
+	if(pRxMsg != NULL)
+	{
+		pdu.busid = 1;
+
+		if(CAN_ID_EXT == pRxMsg->IDE)
+		{
+			SETSCANID(pdu.canid, 0x80000000 & pRxMsg->ExtId);
+		}
+		else
+		{
+			SETSCANID(pdu.canid, pRxMsg->StdId);
+		}
+
+		pdu.dlc = pRxMsg->DLC;
+
+		memcpy(pdu.data, pRxMsg->Data, pRxMsg->DLC);
+
+		Irq_Save(imask);
+		r = RB_PUSH(canout, &pdu, sizeof(pdu));
+		Irq_Restore(imask);
+		if(0 == r)
+		{
+			ASLOG(USB, "canout is full\n");
+		}
+
+		pdu.swPduHandle = -1;
+		pRxMsg->DLC = 0xFF;
+	}
+}
+
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**
