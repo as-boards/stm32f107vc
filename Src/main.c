@@ -52,10 +52,11 @@
 #include "usb_device.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "asdebug.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
+CAN_HandleTypeDef hcan1;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -64,7 +65,8 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
+void MX_GPIO_Init(void);
+void MX_CAN1_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -72,7 +74,35 @@ static void MX_GPIO_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+int mx_can_write(uint32_t canid, uint8_t dlc, uint8_t* data)
+{
+	CanTxMsgTypeDef msg;
 
+	msg.RTR = 0;
+	msg.DLC = dlc;
+
+	if(canid & 0x80000000)
+	{
+		msg.IDE = CAN_ID_EXT;
+		msg.StdId = canid&0x7FFFFFFF;
+	}
+	else
+	{
+		msg.IDE = CAN_ID_STD;
+		msg.ExtId = canid&0x7FFFFFFF;
+	}
+
+	memcpy(msg.Data, data, dlc);
+
+	hcan1.pTxMsg = &msg;
+
+	if(HAL_OK == HAL_CAN_Transmit_IT(&hcan1))
+	{
+		return 0;
+	}
+
+	return -1;
+}
 /* USER CODE END 0 */
 
 /**
@@ -80,7 +110,7 @@ static void MX_GPIO_Init(void);
   *
   * @retval None
   */
-int main(void)
+int xx_main(void)
 {
   /* USER CODE BEGIN 1 */
 
@@ -105,6 +135,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
+  MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -142,7 +173,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.Prediv1Source = RCC_PREDIV1_SOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL4;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL5;
   RCC_OscInitStruct.PLL2.PLL2State = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -186,12 +217,36 @@ void SystemClock_Config(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
+/* CAN1 init function */
+void MX_CAN1_Init(void)
+{
+
+  hcan1.Instance = CAN1;
+  hcan1.Init.Prescaler = 16;
+  hcan1.Init.Mode = CAN_MODE_NORMAL;
+  hcan1.Init.SJW = CAN_SJW_1TQ;
+  hcan1.Init.BS1 = CAN_BS1_1TQ;
+  hcan1.Init.BS2 = CAN_BS2_3TQ;
+  hcan1.Init.TTCM = DISABLE;
+  hcan1.Init.ABOM = DISABLE;
+  hcan1.Init.AWUM = DISABLE;
+  hcan1.Init.NART = DISABLE;
+  hcan1.Init.RFLM = DISABLE;
+  hcan1.Init.TXFP = DISABLE;
+  if (HAL_CAN_Init(&hcan1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
 /** Pinout Configuration
 */
-static void MX_GPIO_Init(void)
+void MX_GPIO_Init(void)
 {
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
 }
@@ -210,9 +265,7 @@ void _Error_Handler(char *file, int line)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  while(1)
-  {
-  }
+    printf("ERROR @%s %d\n", file, line);
   /* USER CODE END Error_Handler_Debug */
 }
 

@@ -69,11 +69,16 @@
 
 /* USER CODE BEGIN PV */
 #define AS_LOG_USB 1
+#ifndef CAN1_Q_SIZE
+#define CAN1_Q_SIZE 32
+#endif
 /* Private variables ---------------------------------------------------------*/
 #ifdef USE_USB_SERIAL
 RB_DECLARE(usbio, char, 1024);
 #endif
 #ifdef USE_USB_CAN
+extern int mx_can_write(uint32_t canid, uint8_t dlc, uint8_t* data);
+RB_DECLARE(can1in,  Can_SerialInPduType, CAN1_Q_SIZE);
 RB_EXTERN(canin);
 RB_EXTERN(canout);
 #endif
@@ -326,12 +331,26 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 #ifdef USE_USB_CAN
   rb_size_t r;
   imask_t imask;
-  Irq_Save(imask);
-  r = RB_PUSH(canin, Buf, *Len);
-  Irq_Restore(imask);
-  if(0 == r)
+  Can_SerialInPduType* pdu = (Can_SerialInPduType*)Buf;
+  if(0 == pdu->busid)
   {
-    ASLOG(USB,"canin is full\n");
+	Irq_Save(imask);
+	r = RB_PUSH(can1in, Buf, *Len);
+	Irq_Restore(imask);
+	if(0 == r)
+	{
+	  ASLOG(USB,"can1in is full\n");
+	}
+  }
+  else
+  {
+    Irq_Save(imask);
+    r = RB_PUSH(canin, Buf, *Len);
+    Irq_Restore(imask);
+    if(0 == r)
+    {
+      ASLOG(USB,"canin is full\n");
+    }
   }
 #endif
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
@@ -386,12 +405,12 @@ void CDC_MainFunction(void)
 #endif
 
 #ifdef USE_USB_CAN
-	Can_SerialOutPduType pdu;
 	rb_size_t r;
 	uint8_t rv;
 	USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
 
 	if(0 == hcdc->TxState) {
+		Can_SerialOutPduType pdu;
 		Irq_Save(imask);
 		r = RB_POLL(canout, &pdu, sizeof(pdu));
 		Irq_Restore(imask);
@@ -400,12 +419,27 @@ void CDC_MainFunction(void)
 			if(USBD_OK == rv)
 			{
 				Irq_Save(imask);
-				RB_POP(canout, &pdu, sizeof(pdu));
+				RB_DROP(canout, sizeof(pdu));
 				Irq_Restore(imask);
 				CanIf_TxConfirmation(pdu.swPduHandle);
 			}
 		}
 	}
+  {
+	Can_SerialInPduType pdu;
+	Irq_Save(imask);
+	r = RB_POLL(can1in, &pdu, sizeof(pdu));
+	Irq_Restore(imask);
+	if(r > 0)
+	{
+		if(0 == mx_can_write(SCANID(pdu.canid), pdu.dlc, pdu.data))
+		{
+			Irq_Save(imask);
+			RB_DROP(can1in, sizeof(pdu));
+			Irq_Restore(imask);
+		}
+	}
+  }
 #endif
   }
 }

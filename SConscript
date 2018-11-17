@@ -5,11 +5,14 @@ cwd = GetCurrentDir()
 Import('asenv')
 MODULES = asenv['MODULES']
 
-objs = []
+srcs = []
 
 if(('USB_SERIAL' in MODULES) or ('USB_CAN' in MODULES)):
-    srcs = Glob('Src/usb*.c')
+    srcs += Glob('Src/usb*.c')
+    srcs += Glob('Src/main.c')
+    srcs += Glob('Src/stm32f1xx_hal_msp.c')
     srcs += Glob('Src/stm32f1xx_it.c')
+    srcs += Glob('Src/*.xml')
     srcs += Glob('Drivers/STM32F1xx_HAL_Driver/Src/*.c')
     srcs += Glob('Middlewares/ST/STM32_USB_Device_Library/Core/Src/*.c')
     srcs += Glob('Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/*.c')
@@ -21,6 +24,5 @@ if(('USB_SERIAL' in MODULES) or ('USB_CAN' in MODULES)):
                         cwd+'/Middlewares/ST/STM32_USB_Device_Library/Core/Inc',
                         cwd+'/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc'])
     asenv.Append(CPPDEFINES=['STM32F107xC'])
-    objs += asenv.Object(srcs)
 
-Return('objs')
+Return('srcs')

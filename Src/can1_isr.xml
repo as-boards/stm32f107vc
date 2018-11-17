@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<AS>
+	<Os>
+		<ISR Name='CAN1_TX_IRQHandler' Vector='19'  Application="OsDefaultApp"/>
+		<ISR Name='CAN1_RX0_IRQHandler' Vector='20'  Application="OsDefaultApp"/>
+		<ISR Name='CAN1_SCE_IRQHandler' Vector='22'  Application="OsDefaultApp"/>
+	</Os>
+</AS>

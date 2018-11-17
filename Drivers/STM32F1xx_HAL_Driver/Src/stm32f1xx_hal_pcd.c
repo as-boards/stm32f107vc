@@ -557,11 +557,6 @@ void HAL_PCD_IRQHandler(PCD_HandleTypeDef *hpcd)
       hpcd->Instance->GOTGINT |= temp;
     }
   }
-  else
-  {
-    /* FATAL ERROR: reset */
-    NVIC_SystemReset();
-  }
 }
 #endif /* USB_OTG_FS */
 
