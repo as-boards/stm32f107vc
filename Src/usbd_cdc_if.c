@@ -332,7 +332,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   rb_size_t r;
   imask_t imask;
   Can_SerialInPduType* pdu = (Can_SerialInPduType*)Buf;
-  if(0 == pdu->busid)
+  if(1 == pdu->busid)
   {
 	Irq_Save(imask);
 	r = RB_PUSH(can1in, Buf, *Len);
