@@ -60,6 +60,7 @@ CAN_HandleTypeDef hcan1;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+/* https://blog.csdn.net/weifengdq/article/details/80585460 */
 static CanRxMsgTypeDef RxMsg;
 static CanRxMsgTypeDef Rx1Msg;
 /* USER CODE END PV */
@@ -207,7 +208,7 @@ void SystemClock_Config(void)
 
     /**Configure the Systick interrupt time 
     */
-  //HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
     /**Configure the Systick 
     */
