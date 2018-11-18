@@ -61,6 +61,7 @@
 #include "CanIf_Cbk.h"
 #endif
 #include "asdebug.h"
+#include "Dio.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -72,6 +73,9 @@
 #ifndef CAN1_Q_SIZE
 #define CAN1_Q_SIZE 32
 #endif
+
+#define LED_CANRTX   DIO_CHL_LED3
+#define LED_CANERROR DIO_CHL_LED2
 /* Private variables ---------------------------------------------------------*/
 #ifdef USE_USB_SERIAL
 RB_DECLARE(usbio, char, 1024);
@@ -427,6 +431,12 @@ void CDC_MainFunction(void)
 				{
 					CanIf_TxConfirmation(pdu.swPduHandle);
 				}
+#ifndef __AS_BOOTLOADER__
+				else
+				{
+					Dio_WriteChannel(LED_CANRTX,STD_LOW);
+				}
+#endif
 			}
 		}
 	}
@@ -440,6 +450,7 @@ void CDC_MainFunction(void)
 	{
 		if(0 == mx_can_write(SCANID(pdu.canid), pdu.dlc, pdu.data))
 		{
+			Dio_WriteChannel(LED_CANRTX,STD_HIGH);
 			Irq_Save(imask);
 			RB_DROP(can1in, sizeof(pdu));
 			Irq_Restore(imask);
@@ -464,6 +475,7 @@ void USB_SerialPutChar(char ch)
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 {
 	printf("CAN1 error: 0x%X\n", hcan->ErrorCode);
+	Dio_WriteChannel(LED_CANERROR,STD_HIGH);
 
 }
 
@@ -515,11 +527,22 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 		}
 
 		pRxMsg->DLC = 0xFF;
+
+		Dio_WriteChannel(LED_CANRTX,STD_HIGH);
+		Dio_WriteChannel(LED_CANERROR,STD_LOW);
 	}
 
 	__HAL_CAN_ENABLE_IT(hcan, CAN_IT_FMP0);
 }
 
+
+void HAL_CAN_TxCpltCallback(CAN_HandleTypeDef* hcan)
+{
+	UNUSED(hcan);
+
+	Dio_WriteChannel(LED_CANRTX,STD_LOW);
+	Dio_WriteChannel(LED_CANERROR,STD_LOW);
+}
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**
