@@ -79,7 +79,7 @@ int mx_can_write(uint32_t canid, uint8_t dlc, uint8_t* data)
 {
 	CanTxMsgTypeDef msg;
 
-	msg.RTR = 0;
+	msg.RTR = CAN_RTR_DATA;
 	msg.DLC = dlc;
 
 	if(canid & 0x80000000)
@@ -249,6 +249,8 @@ void MX_CAN1_Init(void)
 */
 void MX_GPIO_Init(void)
 {
+  __HAL_RCC_AFIO_CLK_ENABLE();
+  __HAL_RCC_PWR_CLK_ENABLE();
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
