@@ -423,7 +423,7 @@ void CDC_MainFunction(void)
 				Irq_Save(imask);
 				RB_DROP(canout, sizeof(pdu));
 				Irq_Restore(imask);
-				if(-1 != pdu.swPduHandle)
+				if(((PduIdType)-1) != pdu.swPduHandle)
 				{
 					CanIf_TxConfirmation(pdu.swPduHandle);
 				}
@@ -493,7 +493,7 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 
 		if(CAN_ID_EXT == pRxMsg->IDE)
 		{
-			SETSCANID(pdu.canid, 0x80000000 & pRxMsg->ExtId);
+			SETSCANID(pdu.canid, 0x80000000 | pRxMsg->ExtId);
 		}
 		else
 		{
@@ -504,6 +504,8 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 
 		memcpy(pdu.data, pRxMsg->Data, pRxMsg->DLC);
 
+		pdu.swPduHandle = (PduIdType)-1;
+
 		Irq_Save(imask);
 		r = RB_PUSH(canout, &pdu, sizeof(pdu));
 		Irq_Restore(imask);
@@ -512,9 +514,10 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 			ASLOG(USB, "canout is full\n");
 		}
 
-		pdu.swPduHandle = -1;
 		pRxMsg->DLC = 0xFF;
 	}
+
+	__HAL_CAN_ENABLE_IT(hcan, CAN_IT_FMP0);
 }
 
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */

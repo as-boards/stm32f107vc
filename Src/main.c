@@ -86,12 +86,12 @@ int mx_can_write(uint32_t canid, uint8_t dlc, uint8_t* data)
 	if(canid & 0x80000000)
 	{
 		msg.IDE = CAN_ID_EXT;
-		msg.StdId = canid&0x7FFFFFFF;
+		msg.ExtId = canid&0x7FFFFFFF;
 	}
 	else
 	{
 		msg.IDE = CAN_ID_STD;
-		msg.ExtId = canid&0x7FFFFFFF;
+		msg.StdId = canid&0x7FFFFFFF;
 	}
 
 	memcpy(msg.Data, data, dlc);
@@ -105,6 +105,35 @@ int mx_can_write(uint32_t canid, uint8_t dlc, uint8_t* data)
 
 	return -1;
 }
+
+void mx_can_init(void) {
+
+	CAN_FilterConfTypeDef filterConfig;
+
+	hcan1.pRxMsg = &RxMsg;
+	hcan1.pRx1Msg = &Rx1Msg;
+	RxMsg.DLC = 0xFF;
+	Rx1Msg.DLC = 0xFF;
+
+	filterConfig.FilterNumber = 0;
+	filterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	filterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	filterConfig.FilterIdHigh = 0x0000;
+	filterConfig.FilterIdLow = 0x0000;
+	filterConfig.FilterMaskIdHigh = 0x0000;
+	filterConfig.FilterMaskIdLow = 0x0000;
+	filterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	filterConfig.FilterActivation = ENABLE;
+	filterConfig.BankNumber = 14;
+
+	if(HAL_CAN_ConfigFilter(&hcan1,&filterConfig) != HAL_OK)
+	{
+		_Error_Handler(__FILE__, __LINE__);
+	}
+
+	__HAL_CAN_ENABLE_IT(&hcan1, CAN_IT_FMP0);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -227,26 +256,23 @@ void MX_CAN1_Init(void)
 {
 
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 9;
+  hcan1.Init.Prescaler = 3;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SJW = CAN_SJW_1TQ;
-  hcan1.Init.BS1 = CAN_BS1_1TQ;
-  hcan1.Init.BS2 = CAN_BS2_2TQ;
+  hcan1.Init.BS1 = CAN_BS1_5TQ;
+  hcan1.Init.BS2 = CAN_BS2_6TQ;
   hcan1.Init.TTCM = DISABLE;
   hcan1.Init.ABOM = DISABLE;
   hcan1.Init.AWUM = DISABLE;
   hcan1.Init.NART = DISABLE;
   hcan1.Init.RFLM = DISABLE;
   hcan1.Init.TXFP = DISABLE;
-  hcan1.pRxMsg = &RxMsg;
-  hcan1.pRx1Msg = &Rx1Msg;
-  RxMsg.DLC = 0xFF;
-  Rx1Msg.DLC = 0xFF;
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
 
+  mx_can_init();
 }
 
 /** Configure pins as 

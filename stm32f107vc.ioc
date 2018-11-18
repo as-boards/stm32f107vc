@@ -1,9 +1,10 @@
 #MicroXplorer Configuration settings - do not modify
-CAN1.BS2=CAN_BS2_2TQ
+CAN1.BS1=CAN_BS1_5TQ
+CAN1.BS2=CAN_BS2_6TQ
 CAN1.CalculateTimeBit=1000
-CAN1.CalculateTimeQuantum=250.0
-CAN1.IPParameters=CalculateTimeQuantum,CalculateTimeBit,Prescaler,BS2
-CAN1.Prescaler=9
+CAN1.CalculateTimeQuantum=83.33333333333334
+CAN1.IPParameters=CalculateTimeQuantum,CalculateTimeBit,Prescaler,BS2,BS1
+CAN1.Prescaler=3
 File.Version=6
 KeepUserPlacement=false
 Mcu.Family=STM32F1
