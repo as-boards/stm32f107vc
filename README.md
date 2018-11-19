@@ -48,7 +48,7 @@ scons run
 
 ![demo usb2can](doc/usb2can_dut_demo.jpg)
 
-In the pannel of asone, run below command to launch the tool asone.
+In the panel of asone, run below command to launch the tool asone.
 
 ```sh
 python main.py
