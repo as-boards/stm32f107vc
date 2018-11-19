@@ -64,3 +64,15 @@ python main.py
 
 #### 3. update the stm32f107vc firmware over USBCAN0
 ![update-firmware-over-usbcan0](doc/update-firmware-over-usbcan0.png)
+
+### B. Play with USB2CAN1
+
+#### 1. open USB2CAN1
+![open-usb2can1](doc/open-usb2can1.png)
+
+#### 2. play AUTOSAR COM stack on USBCAN1
+![play-usb2can1-com-rx](doc/play-usb2can1-com-rx.png)
+![play-usb2can1-com-tx](doc/play-usb2can1-com-tx.png)
+
+#### 3. update the mpc5634 firmware over USBCAN1
+![update-mpc56xx-over-usbcan1](doc/update-mpc56xx-over-usbcan1.png)
