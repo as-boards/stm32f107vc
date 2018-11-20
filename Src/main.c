@@ -53,6 +53,7 @@
 
 /* USER CODE BEGIN Includes */
 #include "asdebug.h"
+#include "Os.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -271,8 +272,6 @@ void MX_CAN1_Init(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
-
-  mx_can_init();
 }
 
 /** Configure pins as 
@@ -284,8 +283,6 @@ void MX_CAN1_Init(void)
 */
 void MX_GPIO_Init(void)
 {
-  __HAL_RCC_AFIO_CLK_ENABLE();
-  __HAL_RCC_PWR_CLK_ENABLE();
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
@@ -294,6 +291,37 @@ void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+uint32_t HAL_GetTick(void)
+{
+	return GetOsTick();
+}
+
+KSM(USB,Init)
+{
+	__HAL_RCC_AFIO_CLK_ENABLE();
+	__HAL_RCC_PWR_CLK_ENABLE();
+	MX_GPIO_Init();
+
+	KGS(USB,Start);
+}
+KSM(USB,Start)
+{
+#ifndef __AS_BOOTLOADER__
+	MX_CAN1_Init();
+	mx_can_init();
+#endif
+	MX_USB_DEVICE_Init();
+	KGS(USB,Running);
+}
+KSM(USB,Stop)
+{
+
+}
+extern void CDC_MainFunction(void);
+KSM(USB,Running)
+{
+	CDC_MainFunction();
+}
 /* USER CODE END 4 */
 
 /**

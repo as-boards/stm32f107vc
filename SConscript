@@ -12,6 +12,7 @@ if(('USB_SERIAL' in MODULES) or ('USB_CAN' in MODULES)):
     srcs += Glob('Src/main.c')
     srcs += Glob('Src/stm32f1xx_hal_msp.c')
     srcs += Glob('Src/stm32f1xx_it.c')
+    srcs += Glob('Src/usb.xml')
     if(asenv['RELEASE']!='asboot'):
         srcs += Glob('Src/can1_isr.xml')
     srcs += Glob('Drivers/STM32F1xx_HAL_Driver/Src/*.c')

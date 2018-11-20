@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<AS>
+	<Os>
+	    <ISR Name='OTG_FS_IRQHandler' Vector='67'  Application="OsDefaultApp"/>
+	</Os>
+	<KSM>
+		<USB><Running/></USB>
+	</KSM>
+</AS>
