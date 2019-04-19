@@ -223,7 +223,7 @@ static int8_t CDC_Init_FS(void)
 static int8_t CDC_DeInit_FS(void)
 {
   /* USER CODE BEGIN 4 */
-  ASLOG(USB,"offline\n");
+  ASLOG(USB,("offline\n"));
   bOnline = FALSE;
   return (USBD_OK);
   /* USER CODE END 4 */
@@ -282,7 +282,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
         if(((uint32_t*)pbuf)[0] > 0)
         {
             bOnline = TRUE;
-            ASLOG(USB,"online\n");
+            ASLOG(USB,("online\n"));
         }
     break;
 
@@ -344,7 +344,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	Irq_Restore(imask);
 	if(0 == r)
 	{
-	  ASLOG(USB,"can1in is full\n");
+	  ASLOG(USB,("can1in is full\n"));
 	}
   }
   else
@@ -355,7 +355,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
     Irq_Restore(imask);
     if(0 == r)
     {
-      ASLOG(USB,"canin is full\n");
+      ASLOG(USB,("canin is full\n"));
     }
   }
 #endif
@@ -523,7 +523,7 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan)
 		Irq_Restore(imask);
 		if(0 == r)
 		{
-			ASLOG(USB, "canout is full\n");
+			ASLOG(USB, ("canout is full\n"));
 		}
 
 		pRxMsg->DLC = 0xFF;
