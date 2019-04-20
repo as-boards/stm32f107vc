@@ -4,7 +4,7 @@
   * @brief   Interrupt Service Routines.
   ******************************************************************************
   *
-  * COPYRIGHT(c) 2018 STMicroelectronics
+  * COPYRIGHT(c) 2019 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -42,6 +42,7 @@
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern CAN_HandleTypeDef hcan1;
+extern SPI_HandleTypeDef hspi1;
 
 /******************************************************************************/
 /*            Cortex-M3 Processor Interruption and Exception Handlers         */ 
@@ -233,6 +234,20 @@ void CAN1_SCE_IRQHandler(void)
   /* USER CODE BEGIN CAN1_SCE_IRQn 1 */
   NVIC_ClearPendingIRQ(CAN1_SCE_IRQn);
   /* USER CODE END CAN1_SCE_IRQn 1 */
+}
+
+/**
+* @brief This function handles SPI1 global interrupt.
+*/
+void SPI1_IRQHandler(void)
+{
+  /* USER CODE BEGIN SPI1_IRQn 0 */
+
+  /* USER CODE END SPI1_IRQn 0 */
+  HAL_SPI_IRQHandler(&hspi1);
+  /* USER CODE BEGIN SPI1_IRQn 1 */
+  NVIC_ClearPendingIRQ(SPI1_IRQn);
+  /* USER CODE END SPI1_IRQn 1 */
 }
 
 /**

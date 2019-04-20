@@ -27,4 +27,7 @@ if(('USB_SERIAL' in MODULES) or ('USB_CAN' in MODULES)):
                         cwd+'/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc'])
     asenv.Append(CPPDEFINES=['STM32F107xC'])
 
+if('SDCARD' in MODULES):
+    srcs += Glob('Src/spi1_isr.xml')
+
 Return('srcs')

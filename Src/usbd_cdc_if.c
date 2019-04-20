@@ -10,7 +10,7 @@
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * Copyright (c) 2018 STMicroelectronics International N.V. 
+  * Copyright (c) 2019 STMicroelectronics International N.V. 
   * All rights reserved.
   *
   * Redistribution and use in source and binary forms, with or without 
@@ -59,6 +59,7 @@
 #ifdef USE_USB_CAN
 #include "Can.h"
 #include "CanIf_Cbk.h"
+#include "CanIf.h"
 #endif
 #include "asdebug.h"
 #include "Dio.h"
@@ -283,6 +284,9 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
         {
             bOnline = TRUE;
             ASLOG(USB,("online\n"));
+#ifdef USE_USB_CAN
+            CanIf_SetControllerMode(CANIF_CHL_LS,CANIF_CS_STARTED);
+#endif
         }
     break;
 
@@ -458,6 +462,12 @@ void CDC_MainFunction(void)
 	}
   }
 #endif
+#endif
+  }
+  else
+  {
+#ifdef USE_USB_CAN
+    CanIf_SetControllerMode(CANIF_CHL_LS,CANIF_CS_STOPPED);
 #endif
   }
 }

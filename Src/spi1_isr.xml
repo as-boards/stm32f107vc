@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<AS>
+	<Os>
+	    <ISR Name='SPI1_IRQHandler' Vector='35'  Application="OsDefaultApp"/>
+	</Os>
+</AS>
