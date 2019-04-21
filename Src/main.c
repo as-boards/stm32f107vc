@@ -347,6 +347,23 @@ void sd_spi_init(void)
   MX_SPI1_Init();
 }
 
+void sd_spi_clk_slow(void)
+{
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+	if (HAL_SPI_Init(&hspi1) != HAL_OK)
+	{
+		_Error_Handler(__FILE__, __LINE__);
+	}
+}
+void sd_spi_fast_fast(void)
+{
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+	if (HAL_SPI_Init(&hspi1) != HAL_OK)
+	{
+		_Error_Handler(__FILE__, __LINE__);
+	}
+}
+
 void sd_chip_selected(int select)
 {
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, select);
