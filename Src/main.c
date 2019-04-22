@@ -293,7 +293,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -322,7 +322,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void sd_spi_init(void)
+void sd_spi_init(int sd)
 {
   GPIO_InitTypeDef GPIO_InitStruct;
 
@@ -347,35 +347,35 @@ void sd_spi_init(void)
   MX_SPI1_Init();
 }
 
-void sd_spi_clk_slow(void)
+void sd_spi_clk_slow(int sd)
 {
-	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
 	if (HAL_SPI_Init(&hspi1) != HAL_OK)
 	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
 }
-void sd_spi_fast_fast(void)
+void sd_spi_fast_fast(int sd)
 {
-	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
 	if (HAL_SPI_Init(&hspi1) != HAL_OK)
 	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
 }
 
-void sd_chip_selected(int select)
+void sd_chip_selected(int sd, int select)
 {
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, select);
 }
 
-int sd_is_detected(void)
+int sd_is_detected(int sd)
 {
 	/* TODO: not working for now */
 	return (GPIO_PIN_SET == HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_6));
 }
 
-int sd_spi_transmit(uint8_t* txData, uint8_t* rxData, size_t size)
+int sd_spi_transmit(int sd, uint8_t* txData, uint8_t* rxData, size_t size)
 {
 	int ercd;
 
