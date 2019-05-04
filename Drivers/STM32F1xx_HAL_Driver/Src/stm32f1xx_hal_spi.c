@@ -623,7 +623,7 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
   {
      hspi->State = HAL_SPI_STATE_BUSY_RX;
      /* Call transmit-receive function to send Dummy data on Tx line and generate clock on CLK line */
-    return HAL_SPI_TransmitReceive(hspi,pData,pData,Size,Timeout);
+    return HAL_SPI_TransmitReceive(hspi,NULL,pData,Size,Timeout);
   }
 
   /* Process Locked */
@@ -848,7 +848,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
     goto error;
   }
 
-  if((pTxData == NULL) || (pRxData == NULL) || (Size == 0U))
+  if(/*(pTxData == NULL) ||*/ (pRxData == NULL) || (Size == 0U))
   {
     errorcode = HAL_ERROR;
     goto error;
@@ -938,8 +938,12 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
   {
     if((hspi->Init.Mode == SPI_MODE_SLAVE) || (hspi->TxXferCount == 0x01U))
     {
-      *((__IO uint8_t*)&hspi->Instance->DR) = (*pTxData);
-      pTxData += sizeof(uint8_t);
+      if(pTxData != NULL) {
+        *((__IO uint8_t*)&hspi->Instance->DR) = (*pTxData);
+        pTxData += sizeof(uint8_t);
+      } else {
+        *((__IO uint8_t*)&hspi->Instance->DR) = 0xFF;
+      }
       hspi->TxXferCount--;
     }
     while((hspi->TxXferCount > 0U) || (hspi->RxXferCount > 0U))
@@ -947,7 +951,12 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
       /* check TXE flag */
       if(txallowed && (hspi->TxXferCount > 0U) && (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_TXE)))
       {
-        *(__IO uint8_t *)&hspi->Instance->DR = (*pTxData++);
+        if(pTxData != NULL) {
+          *((__IO uint8_t*)&hspi->Instance->DR) = (*pTxData);
+          pTxData += sizeof(uint8_t);
+        } else {
+          *((__IO uint8_t*)&hspi->Instance->DR) = 0xFF;
+        }
         hspi->TxXferCount--;
         /* Next Data is a reception (Rx). Tx not allowed */ 
         txallowed = 0U;
